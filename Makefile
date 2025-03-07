@@ -1,25 +1,28 @@
 CC = gcc
 CFLAGS = -g -std=c11 -Wpedantic -Wall -Wextra -Werror
-ASSEMBLER_FILES = src/tables.c src/utils.c src/translate_utils.c src/translate.c src/block.c
-NEW_TEST ?= Single
+
+SRCS = src/tables.c src/utils.c src/translate_utils.c src/translate.c src/block.c assembler.c
+OBJS = $(SRCS:.c=.o)
+
+TEST_NAME ?= labels
+
+.PHONY: all clean check test
 
 all: assembler
 
-.PHONY: assembler clean check grade
+assembler: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
-assembler: clean
-	$(CC) $(CFLAGS) -o assembler assembler.c $(ASSEMBLER_FILES)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	-$(MAKE) -C test clean
-	-rm -f *.o assembler
-	-rm -rf out
+	-rm -f *.o src/*.o assembler
 	-rm -rf __pycache__
 
 check: assembler
 	$(MAKE) -C test check
 
 test: assembler
-	$(MAKE) -C test test TEST_NAME=$(TEST_NAME) 
-
-TEST_NAME ?= "labels"
+	$(MAKE) -C test test TEST_NAME=$(TEST_NAME)
