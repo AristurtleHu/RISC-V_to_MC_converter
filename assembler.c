@@ -22,14 +22,14 @@
 #define MAX_ARGS 3
 #define BUF_SIZE 1024
 #define MAX_PATH_LENGTH 512
-const char* IGNORE_CHARS = " \f\n\r\t\v,()";
+const char *IGNORE_CHARS = " \f\n\r\t\v,()";
 
 /*******************************
  * Helper Functions
  *******************************/
 
 /* you should not be calling this function yourself. */
-static void raise_label_error(uint32_t input_line, const char* label) {
+static void raise_label_error(uint32_t input_line, const char *label) {
   write_to_log("Error - invalid label at line %d: %s\n", input_line, label);
 }
 
@@ -42,7 +42,7 @@ static void raise_label_error(uint32_t input_line, const char* label) {
    EXTRA_ARG should contain the first extra argument encountered.
  */
 static void raise_extra_argument_error(uint32_t input_line,
-                                       const char* extra_arg) {
+                                       const char *extra_arg) {
   write_to_log("Error - extra argument at line %d: %s\n", input_line,
                extra_arg);
 }
@@ -53,15 +53,15 @@ static void raise_extra_argument_error(uint32_t input_line,
    INPUT_LINE is which line of the input file that the error occurred in. Note
    that the first line is line 1 and that empty lines are included in the count.
  */
-static void raise_instruction_error(uint32_t input_line, const char* name,
-                                    char** args, int num_args) {
+static void raise_instruction_error(uint32_t input_line, const char *name,
+                                    char **args, int num_args) {
   write_to_log("Error - invalid instruction at line %d: ", input_line);
   log_inst(name, args, num_args);
 }
 
 /* Truncates the string at the first occurrence of the '#' character. */
-static void skip_comments(char* str) {
-  char* comment_start = strchr(str, '#');
+static void skip_comments(char *str) {
+  char *comment_start = strchr(str, '#');
   if (comment_start) {
     *comment_start = '\0';
   }
@@ -84,11 +84,32 @@ static void skip_comments(char* str) {
     3b. STR ends in ':' and is a valid label. Addition to symbol table succeeds.
         Returns 1.
  */
-static int add_if_label(uint32_t input_line, char* str, uint32_t byte_offset,
-                        SymbolTable* symtbl) {
+static int add_if_label(uint32_t input_line, char *str, uint32_t byte_offset,
+                        SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
-  
+
+  size_t len = strlen(str);
+  if (len == 0)
+    return 0;
+
+  // Check if the label ends with ':'
+  if (str[len - 1] != ':')
+    return 0;
+
+  str[len - 1] = '\0'; // remove ":"
+
+  // Check if it's a valid label
+  if (!is_valid_label(str))
+    return -1;
+
+  // Addition to symbol table succeeds
+  if (add_to_table(symtbl, str, byte_offset) == 0)
+    return 1;
+
+  // Addition to symbol table fails
+  else
+    return -1;
 
   /* === end === */
   return 0;
@@ -130,12 +151,12 @@ static int add_if_label(uint32_t input_line, char* str, uint32_t byte_offset,
    exit, but process the entire file and return -1. If no errors were
    encountered, it should return 0.
  */
-int pass_one(FILE* input, Block* blk, SymbolTable* table) {
+int pass_one(FILE *input, Block *blk, SymbolTable *table) {
   /* A buffer for line parsing. */
   char buf[BUF_SIZE];
 
   /* Variables for argument parsing. */
-  char* args[MAX_ARGS];
+  char *args[MAX_ARGS];
   uint32_t offset = 0;
   int error = 0;
   /* For each line, there are some hints of what you should do:
@@ -149,7 +170,6 @@ int pass_one(FILE* input, Block* blk, SymbolTable* table) {
   while (fgets(buf, BUF_SIZE, input)) {
     /* IMPLEMENT ME */
     /* === start === */
-    
 
     /* === end === */
   }
@@ -160,7 +180,7 @@ int pass_one(FILE* input, Block* blk, SymbolTable* table) {
    If an error is reached, DO NOT EXIT the function. Keep translating the rest
    of the document, and at the end, return -1. Return 0 if no errors were
    encountered. */
-int pass_two(Block* blk, SymbolTable* table, FILE* output) {
+int pass_two(Block *blk, SymbolTable *table, FILE *output) {
   if (output == NULL) {
     printf("wrong file opened.\n");
     return -1;
@@ -185,11 +205,10 @@ int pass_two(Block* blk, SymbolTable* table, FILE* output) {
   int error = 0;
   /* Process each instruction */
   for (uint32_t i = 0; i < blk->len; ++i) {
-    Instr* inst = &blk->entries[i];
+    Instr *inst = &blk->entries[i];
     /* IMPLEMENT ME */
     /* === start === */
-    
-    
+
     /* === end === */
   }
 
@@ -201,7 +220,7 @@ static void close_files(int count, ...) {
   va_start(args, count);
 
   for (int i = 0; i < count; i++) {
-    FILE* file = va_arg(args, FILE*);
+    FILE *file = va_arg(args, FILE *);
     if (file != NULL) {
       fclose(file);
     }
@@ -211,11 +230,11 @@ static void close_files(int count, ...) {
 }
 
 /* Output folder is assured to end with "/" */
-void ResolvePath(const char* input_filename, const char* output_folder,
-                 char* output_filename, char* log_filename, char* tbl_filename,
-                 char* inst_filename) {
+void ResolvePath(const char *input_filename, const char *output_folder,
+                 char *output_filename, char *log_filename, char *tbl_filename,
+                 char *inst_filename) {
   /* Extract the filename from the path */
-  const char* fileName = strrchr(input_filename, '/');
+  const char *fileName = strrchr(input_filename, '/');
   if (fileName) {
     /* Skip the '/' character */
     fileName++;
@@ -226,7 +245,7 @@ void ResolvePath(const char* input_filename, const char* output_folder,
 
   /* Remove the extension by locating the last '.' character */
   char base[MAX_PATH_LENGTH];
-  char* dot = strrchr(fileName, '.');
+  char *dot = strrchr(fileName, '.');
   size_t base_length = dot ? (size_t)(dot - fileName) : strlen(fileName);
 
   strncpy(base, fileName, base_length);
@@ -260,7 +279,7 @@ void ResolvePath(const char* input_filename, const char* output_folder,
 /* Runs the two-pass assembler. Most of the actual work is done in pass_one()
    and pass_two().
  */
-int assemble(const char* in, const char* out, int test) {
+int assemble(const char *in, const char *out, int test) {
   FILE *input, *output, *tbl_file, *inst_file;
   char output_filename[MAX_PATH_LENGTH];
   char log_filename[MAX_PATH_LENGTH];
@@ -276,8 +295,8 @@ int assemble(const char* in, const char* out, int test) {
   }
   set_log_file(log_filename);
 
-  SymbolTable* tbl = create_table(SYMBOLTBL_UNIQUE_NAME);
-  Block* blk = create_block();
+  SymbolTable *tbl = create_table(SYMBOLTBL_UNIQUE_NAME);
+  Block *blk = create_block();
 
   input = fopen(in, "r");
   output = fopen(output_filename, "w");
@@ -319,7 +338,7 @@ static void print_usage_and_exit(void) {
   exit(0);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int err;
   enum OPTIONS {
     OPT_INPUT,
@@ -344,24 +363,24 @@ int main(int argc, char** argv) {
   while ((opt = getopt_long_only(argc, argv, short_options, long_options,
                                  &option_index)) != -1) {
     switch (opt) {
-      case OPT_INPUT:
-        strcpy(input, optarg);
-        break;
-      case OPT_OUTPUT:
-        // If the output folder ends with "/", use it directly.
-        // Else, add "/" to the end.
-        if (optarg[strlen(optarg) - 1] == '/') {
-          snprintf(output, MAX_PATH_LENGTH, "%s", optarg);
-        } else {
-          snprintf(output, MAX_PATH_LENGTH, "%s/", optarg);
-        }
-        break;
-      case OPT_TEST:
-        test = 1;
-        break;
-      default:
-        print_usage_and_exit();
-        break;
+    case OPT_INPUT:
+      strcpy(input, optarg);
+      break;
+    case OPT_OUTPUT:
+      // If the output folder ends with "/", use it directly.
+      // Else, add "/" to the end.
+      if (optarg[strlen(optarg) - 1] == '/') {
+        snprintf(output, MAX_PATH_LENGTH, "%s", optarg);
+      } else {
+        snprintf(output, MAX_PATH_LENGTH, "%s/", optarg);
+      }
+      break;
+    case OPT_TEST:
+      test = 1;
+      break;
+    default:
+      print_usage_and_exit();
+      break;
     }
   }
   if (strlen(input) == 0 || strlen(output) == 0) {
