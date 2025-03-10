@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void write_inst_string(FILE* output, const char* name, char** args,
+void write_inst_string(FILE *output, const char *name, char **args,
                        int num_args) {
   int i;
 
@@ -23,11 +23,11 @@ void write_inst_string(FILE* output, const char* name, char** args,
   fprintf(output, "\n");
 }
 
-void write_inst_hex(FILE* output, uint32_t instruction) {
+void write_inst_hex(FILE *output, uint32_t instruction) {
   fprintf(output, "0x%08X\n", instruction);
 }
 
-int is_valid_label(const char* str) {
+int is_valid_label(const char *str) {
   int first = 1;
   if (!str) {
     return 0;
@@ -50,7 +50,7 @@ int is_valid_label(const char* str) {
 
 /* Translate the input string into a signed number. The number is then
    checked to be within the correct range based on its type. You should
-   call is_valid_num() to check if it is valid.
+   call is_valid_imm() to check if it is valid.
 
    The input may be in either positive or negative, and be in either
    decimal or hexadecimal format. It is also possible that the input is not
@@ -63,17 +63,16 @@ int is_valid_label(const char* str) {
    function returns 0 if the conversion proceeded without errors, or -1 if an
    error occurred.
  */
-int translate_num(long int* output, const char* str, ImmType type) {
+int translate_num(long int *output, const char *str, ImmType type) {
   /* IMPLEMENT ME */
   /* === start === */
-  
 
   /* === end === */
   return 0;
 }
 
 typedef struct {
-  const char* name;
+  const char *name;
   uint8_t number;
 } RegEntry;
 
@@ -100,12 +99,10 @@ static const RegEntry reg_map[] = {
 
    Returns the register number of STR or -1 if the register name is invalid.
  */
-int translate_reg(const char* str) {
+int translate_reg(const char *str) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
-
+  // TODO: may use the provided reg_map
   /* === end === */
   return -1;
 }
@@ -115,18 +112,16 @@ int translate_reg(const char* str) {
 */
 int is_valid_imm(long imm, ImmType type) {
   switch (type) {
-    case IMM_NONE:
-      return 1;
-    case IMM_12_SIGNED:
-      return imm >= -2048 && imm <= 2047;
-    /* IMPLEMENT ME */
-    /* === start === */
-    
-    
-    
-    /* === end === */
-    default:
-      return 0;
+  case IMM_NONE:
+    return 1;
+  case IMM_12_SIGNED:
+    return imm >= -2048 && imm <= 2047;
+  /* IMPLEMENT ME */
+  /* === start === */
+
+  /* === end === */
+  default:
+    return 0;
   }
-  return 0;  // shouldn't reach here
+  return 0; // shouldn't reach here
 }

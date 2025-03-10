@@ -15,7 +15,6 @@
 #include "tables.h"
 #include "translate_utils.h"
 
-
 static const PseudoHandler pseudo_handlers[] = {
     {"beqz", transform_beqz}, {"bnez", transform_bnez}, {"li", transform_li},
     {"mv", transform_mv},     {"j", transform_j},       {"jr", transform_jr},
@@ -33,6 +32,8 @@ Require fields per entry:
   - ImmType imm_type;         -- imm type (see translate_utils.h)
 */
 static const InstrInfo instr_table[] = {
+    // No need to modify, just read and understand
+
     // R-type instructions
     {"add", R_TYPE, 0x33, 0x0, 0x00, IMM_NONE},
 
@@ -94,20 +95,18 @@ static const InstrInfo instr_table[] = {
     /* === end === */
 };
 
-unsigned transform_beqz(Block* blk, char** args, int num_args) {
+unsigned transform_beqz(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-
 
   /* === end === */
   return 0;
 }
 
-unsigned transform_bnez(Block* blk, char** args, int num_args) {
+unsigned transform_bnez(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
+
   /* === end === */
   return 0;
 }
@@ -123,7 +122,7 @@ unsigned transform_bnez(Block* blk, char** args, int num_args) {
   larger than the largest 32 bit number to be loaded with li. You should follow
   the above rules if venus behaves differently.
 */
-unsigned transform_li(Block* blk, char** args, int num_args) {
+unsigned transform_li(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
 
@@ -134,43 +133,25 @@ unsigned transform_li(Block* blk, char** args, int num_args) {
 /* Hint:
   - your expansion should use the fewest number of instructions possible.
  */
-unsigned transform_mv(Block* blk, char** args, int num_args) {
+unsigned transform_mv(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
 
   /* Release version: */
   return 0;
 }
 
-unsigned transform_j(Block* blk, char** args, int num_args) {
+unsigned transform_j(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
 
   /* === end === */
   return 0;
 }
 
-unsigned transform_jr(Block* blk, char** args, int num_args) {
+unsigned transform_jr(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-
-  /* === end === */
-  return 0;
-}
-
-/* Hint:
-  - Since handler is selected by instruction name, be careful about
-    pseudo/regular instruction name collisions
- */
-unsigned transform_jal(Block* blk, char** args, int num_args) {
-  /* IMPLEMENT ME */
-  /* === start === */
-  
-  
 
   /* === end === */
   return 0;
@@ -180,11 +161,21 @@ unsigned transform_jal(Block* blk, char** args, int num_args) {
   - Since handler is selected by instruction name, be careful about
     pseudo/regular instruction name collisions
  */
-unsigned transform_jalr(Block* blk, char** args, int num_args) {
+unsigned transform_jal(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
+
+  /* === end === */
+  return 0;
+}
+
+/* Hint:
+  - Since handler is selected by instruction name, be careful about
+    pseudo/regular instruction name collisions
+ */
+unsigned transform_jalr(Block *blk, char **args, int num_args) {
+  /* IMPLEMENT ME */
+  /* === start === */
 
   /* === end === */
   return 0;
@@ -193,16 +184,16 @@ unsigned transform_jalr(Block* blk, char** args, int num_args) {
 /* Hint:
  * - You should leave the label AS IS and resolve it in pass 2.
  */
-unsigned transform_lw(Block* blk, char** args, int num_args) {
+unsigned transform_lw(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
+
   /* === end === */
   return 0;
 }
 
 /* Traverse pseudo_handlers table to select corresponding handler by NAME */
-const PseudoHandler* find_pseudo_handler(const char* name) {
+const PseudoHandler *find_pseudo_handler(const char *name) {
   for (size_t i = 0; i < sizeof(pseudo_handlers) / sizeof(pseudo_handlers[0]);
        i++) {
     if (strcmp(name, pseudo_handlers[i].name) == 0) {
@@ -229,10 +220,10 @@ const PseudoHandler* find_pseudo_handler(const char* name) {
 
    Returns the number of instructions written (so 0 if there were any errors).
  */
-unsigned write_pass_one(Block* blk, const char* name, char** args,
+unsigned write_pass_one(Block *blk, const char *name, char **args,
                         int num_args) {
   /* Deal with pseudo-instructions */
-  const PseudoHandler* handler = find_pseudo_handler(name);
+  const PseudoHandler *handler = find_pseudo_handler(name);
   if (handler) {
     return handler->transform(blk, args, num_args);
   }
@@ -240,8 +231,6 @@ unsigned write_pass_one(Block* blk, const char* name, char** args,
   /* IMPLEMENT ME */
   /* === start === */
 
-
-  
   /* === end === */
   return 0;
 }
@@ -266,24 +255,24 @@ unsigned write_pass_one(Block* blk, const char* name, char** args,
 
    Returns 0 on success and -1 on error.
  */
-int translate_inst(FILE* output, const char* name, char** args, size_t num_args,
-                   uint32_t addr, SymbolTable* symtbl) {
+int translate_inst(FILE *output, const char *name, char **args, size_t num_args,
+                   uint32_t addr, SymbolTable *symtbl) {
   for (size_t i = 0; i < sizeof(instr_table) / sizeof(instr_table[0]); i++) {
-    const InstrInfo* info = &instr_table[i];
+    const InstrInfo *info = &instr_table[i];
     if (strcmp(name, info->name) == 0) {
       switch (info->instr_type) {
-        case R_TYPE:
-          return write_rtype(output, info, args, num_args);
-        case I_TYPE:
-          return write_itype(output, info, args, num_args, addr, symtbl);
-        case S_TYPE:
-          return write_stype(output, info, args, num_args);
-        case SB_TYPE:
-          return write_sbtype(output, info, args, num_args, addr, symtbl);
-        case U_TYPE:
-          return write_utype(output, info, args, num_args, addr, symtbl);
-        case UJ_TYPE:
-          return write_ujtype(output, info, args, num_args, addr, symtbl);
+      case R_TYPE:
+        return write_rtype(output, info, args, num_args);
+      case I_TYPE:
+        return write_itype(output, info, args, num_args, addr, symtbl);
+      case S_TYPE:
+        return write_stype(output, info, args, num_args);
+      case SB_TYPE:
+        return write_sbtype(output, info, args, num_args, addr, symtbl);
+      case U_TYPE:
+        return write_utype(output, info, args, num_args, addr, symtbl);
+      case UJ_TYPE:
+        return write_ujtype(output, info, args, num_args, addr, symtbl);
       }
     }
   }
@@ -297,12 +286,10 @@ int translate_inst(FILE* output, const char* name, char** args, size_t num_args,
    This function is INCOMPLETE. Complete the implementation below. You will
    find bitwise operations to be the cleanest way to complete this function.
  */
-int write_rtype(FILE* output, const InstrInfo* info, char** args,
+int write_rtype(FILE *output, const InstrInfo *info, char **args,
                 size_t num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
 
   /* === end === */
   return 0;
@@ -315,20 +302,19 @@ int write_rtype(FILE* output, const InstrInfo* info, char** args,
   label(s). You need to take that special case into consideration. Refer to
   write_sbtype for detailed relative address calculation.
  */
-int write_itype(FILE* output, const InstrInfo* info, char** args,
-                size_t num_args, uint32_t addr, SymbolTable* symtbl) {
+int write_itype(FILE *output, const InstrInfo *info, char **args,
+                size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
-  
+
   /* === end === */
   return 0;
 }
 
-int write_stype(FILE* output, const InstrInfo* info, char** args,
+int write_stype(FILE *output, const InstrInfo *info, char **args,
                 size_t num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  
 
   /* === end === */
   return 0;
@@ -344,12 +330,10 @@ int write_stype(FILE* output, const InstrInfo* info, char** args,
    so the relative addres is
      I = L - A
 */
-int write_sbtype(FILE* output, const InstrInfo* info, char** args,
-                 size_t num_args, uint32_t addr, SymbolTable* symtbl) {
+int write_sbtype(FILE *output, const InstrInfo *info, char **args,
+                 size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
 
   /* === end === */
   return 0;
@@ -360,12 +344,10 @@ int write_sbtype(FILE* output, const InstrInfo* info, char** args,
   label(s). You need to take that special case into consideration. Refer to
   write_sbtype for detailed relative address calculation.
  */
-int write_utype(FILE* output, const InstrInfo* info, char** args,
-                size_t num_args, uint32_t addr, SymbolTable* symtbl) {
+int write_utype(FILE *output, const InstrInfo *info, char **args,
+                size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
 
   /* === end === */
   return 0;
@@ -373,11 +355,11 @@ int write_utype(FILE* output, const InstrInfo* info, char** args,
 
 /* In this project there is no need to relocate labels,
    you may think about the reasons. */
-int write_ujtype(FILE* output, const InstrInfo* info, char** args,
-                 size_t num_args, uint32_t addr, SymbolTable* symtbl) {
+int write_ujtype(FILE *output, const InstrInfo *info, char **args,
+                 size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
-  
+
   /* === end === */
   return 0;
 }
