@@ -19,7 +19,7 @@ extern const int SYMBOLTBL_UNIQUE_NAME; /* duplicate names not allowed */
 
 /* Entry of the symbol table. */
 typedef struct {
-  char* name;
+  char *name;
   uint32_t addr;
 } Symbol;
 
@@ -30,7 +30,7 @@ typedef struct {
   /* IMPLEMENT ME */
   /* === start === */
 
-
+  Symbol *entries; // TODO: add for pass compile
   /* === end === */
 
   /* The current length of the table. */
@@ -44,24 +44,24 @@ typedef struct {
 /* Helper functions: */
 void allocation_failed(void);
 void addr_alignment_incorrect(void);
-void name_already_exists(const char* name);
-void write_sym(FILE* output, uint32_t addr, const char* name);
+void name_already_exists(const char *name);
+void write_sym(FILE *output, uint32_t addr, const char *name);
 
 /* IMPLEMENT ME - see documentation in tables.c */
-SymbolTable* create_table(int mode);
+SymbolTable *create_table(int mode);
 
 /* IMPLEMENT ME - see documentation in tables.c */
-void free_table(SymbolTable* table);
+void free_table(SymbolTable *table);
 
 /* IMPLEMENT ME - see documentation in tables.c */
-void resize_table(SymbolTable* table);
+void resize_table(SymbolTable *table);
 
 /* IMPLEMENT ME - see documentation in tables.c */
-int add_to_table(SymbolTable* table, const char* name, uint32_t addr);
+int add_to_table(SymbolTable *table, const char *name, uint32_t addr);
 
 /* IMPLEMENT ME - see documentation in tables.c */
-int64_t get_addr_for_symbol(SymbolTable* table, const char* name);
+int64_t get_addr_for_symbol(SymbolTable *table, const char *name);
 
-void write_table(SymbolTable* table, FILE* output);
+void write_table(SymbolTable *table, FILE *output);
 
 #endif

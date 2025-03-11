@@ -100,8 +100,10 @@ static int add_if_label(uint32_t input_line, char *str, uint32_t byte_offset,
   str[len - 1] = '\0'; // remove ":"
 
   // Check if it's a valid label
-  if (!is_valid_label(str))
+  if (!is_valid_label(str)) {
+    raise_label_error(input_line, str);
     return -1;
+  }
 
   // Addition to symbol table succeeds
   if (add_to_table(symtbl, str, byte_offset) == 0)
@@ -171,9 +173,57 @@ int pass_one(FILE *input, Block *blk, SymbolTable *table) {
     /* IMPLEMENT ME */
     /* === start === */
 
+    // skip comments
+    skip_comments(buf);
+
+    // keep track of the current line
+    static uint32_t input_line = 0;
+    input_line++;
+
+    char *name = strtok(buf, IGNORE_CHARS); // first token
+
+    if (name == NULL) // only comments
+      continue;
+
+    // check if it's a label
+    int label_check = add_if_label(input_line, name, offset, table);
+    if (label_check == -1) // invalid label or addition to table fails
+      error = -1;
+
+    if (label_check != 0)
+      name = strtok(NULL, IGNORE_CHARS); // get instruction
+    if (name == NULL)
+      continue;
+
+    // Read up to MAX_ARGS arguments
+    int num_args = 0;
+    while (num_args < MAX_ARGS) {
+      char *arg = strtok(NULL, IGNORE_CHARS);
+      if (arg == NULL)
+        break;
+
+      args[num_args++] = arg;
+    }
+
+    // Check for extra arguments
+    char *extra_arg = strtok(NULL, IGNORE_CHARS);
+    if (extra_arg != NULL) {
+      raise_extra_argument_error(input_line, extra_arg);
+      error = -1;
+      continue;
+    }
+
+    // Write the instruction to the block
+    if (write_pass_one(blk, name, args, num_args) == 0) {
+      raise_instruction_error(input_line, name, args, num_args);
+      error = -1;
+    } else
+      offset += 4; // Each instruction is 4 bytes
+
     /* === end === */
   }
-  return 0;
+
+  return error;
 }
 
 /* Second pass of the assembler.
