@@ -20,14 +20,14 @@
  */
 typedef struct {
   /* Instruction name */
-  char* name;
+  char *name;
 
   /* Number of arguments */
   uint32_t arg_num;
 
   /* Arguments for this instruction (e.g., register number, label, address,
    * immediate, etc.) */
-  char* args[MAX_ARGS];
+  char *args[MAX_ARGS];
 
   /* Line number of this instruction in the source file */
   int line_number;
@@ -75,10 +75,9 @@ There are no functions to be implemented in these files, but understanding the
 purpose of these two structures will help you better complete the assembler in
 the future.
 */
-
 typedef struct {
   /* Pointer to an array of instructions in the block */
-  Instr* entries;
+  Instr *entries;
 
   /* Number of instructions currently stored in the block */
   uint32_t len;
@@ -94,18 +93,18 @@ typedef struct {
 void block_allocation_failed(void);
 
 /* Create and initialize a new block */
-Block* create_block();
+Block *create_block();
 
 /* Free a previously allocated block */
-void free_block(Block* block);
+void free_block(Block *block);
 
 /* Increase the capacity of the block by INCREMENT_OF_CAP */
-void resize_block(Block* block);
+void resize_block(Block *block);
 
 /* Add an instruction to the given block */
-int add_to_block(Block* block, const char* name, char** args, uint32_t arg_num);
+int add_to_block(Block *block, const char *name, char **args, uint32_t arg_num);
 
 /* Write the contents of the block to the output file */
-void write_block(Block* block, FILE* output);
+void write_block(Block *block, FILE *output);
 
 #endif
