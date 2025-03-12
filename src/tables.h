@@ -30,7 +30,8 @@ typedef struct {
   /* IMPLEMENT ME */
   /* === start === */
 
-  Symbol *entries; // TODO: add for pass compile
+  Symbol *entries;
+
   /* === end === */
 
   /* The current length of the table. */

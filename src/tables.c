@@ -36,11 +36,11 @@ void addr_alignment_incorrect(void) {
   write_to_log("Error: address is not a multiple of 4.\n");
 }
 
-void name_already_exists(const char* name) {
+void name_already_exists(const char *name) {
   write_to_log("Error: name '%s' already exists in table.\n", name);
 }
 
-void write_sym(FILE* output, uint32_t addr, const char* name) {
+void write_sym(FILE *output, uint32_t addr, const char *name) {
   fprintf(output, "%u\t%s\n", addr, name);
 }
 
@@ -58,34 +58,57 @@ void write_sym(FILE* output, uint32_t addr, const char* name) {
    this, you can refer to create_block().
 
  */
-SymbolTable* create_table(int mode) {
+SymbolTable *create_table(int mode) {
   if (!(mode == SYMBOLTBL_NON_UNIQUE || mode == SYMBOLTBL_UNIQUE_NAME)) {
     return NULL;
   }
 
   /* IMPLEMENT ME */
   /* === start === */
-  
+
+  SymbolTable *table = (SymbolTable *)malloc(sizeof(SymbolTable));
+  if (!table)
+    allocation_failed();
+
+  table->cap = INCREMENT_OF_CAP;
+  table->len = 0;
+  table->mode = mode;
+
+  table->entries = (Symbol *)malloc(sizeof(Symbol) * table->cap);
+  if (!table->entries) {
+    free(table);
+    allocation_failed();
+  }
+
+  return table;
 
   /* === end === */
   return NULL;
 }
 
 /* Free the given SymbolTable and all associated memory. */
-void free_table(SymbolTable* table) {
+void free_table(SymbolTable *table) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
+
+  if (!table)
+    return;
+
+  for (uint32_t i = 0; i < table->len; i++)
+    free(table->entries[i].name);
+
+  free(table->entries);
+  free(table);
+
   /* === end === */
 }
 
-static char* strdup(const char* src) {
+static char *strdup(const char *src) {
   if (!src) {
     return NULL;
   }
   size_t len = strlen(src);
-  char* dst = (char*)malloc(len + 1);
+  char *dst = (char *)malloc(len + 1);
   if (!dst) {
     allocation_failed();
   }
@@ -97,13 +120,18 @@ static char* strdup(const char* src) {
  * If the label is found, return a pointer to the corresponding Symbol struct.
  * If the label is not found, return NULL.
  */
-static Symbol* lookup(SymbolTable* table, const char* name) {
+static Symbol *lookup(SymbolTable *table, const char *name) {
   if (!table || !name) {
     return NULL;
   }
   /* IMPLEMENT ME */
   /* === start === */
-  
+
+  for (uint32_t i = 0; i < table->len; i++) {
+    if (strcmp(table->entries[i].name, name) == 0) {
+      return &table->entries[i];
+    }
+  }
 
   /* === end === */
   return NULL;
@@ -126,11 +154,31 @@ static Symbol* lookup(SymbolTable* table, const char* name) {
 
    Otherwise, you should store the symbol name and address and return 0.
  */
-int add_to_table(SymbolTable* table, const char* name, uint32_t addr) {
+int add_to_table(SymbolTable *table, const char *name, uint32_t addr) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
+
+  if (addr % 4 != 0) {
+    addr_alignment_incorrect();
+    return -1;
+  }
+
+  if (table->mode == SYMBOLTBL_UNIQUE_NAME && lookup(table, name)) {
+    name_already_exists(name);
+    return -1;
+  }
+
+  if (table->len >= table->cap) // no space for new entry
+    resize_table(table);
+
+  char *name_copy = strdup(name);
+  if (!name_copy)
+    allocation_failed();
+
+  table->entries[table->len].name = name_copy;
+  table->entries[table->len].addr = addr;
+  table->len++;
+
   /* === end === */
   return 0;
 }
@@ -140,33 +188,44 @@ int add_to_table(SymbolTable* table, const char* name, uint32_t addr) {
 
    Before implementing this function, ensure that the static function
    'lookup(SymbolTable* table, const char* name)' is completed first. */
-
-int64_t get_addr_for_symbol(SymbolTable* table, const char* name) {
+int64_t get_addr_for_symbol(SymbolTable *table, const char *name) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
+
+  Symbol *symbol = lookup(table, name);
+  if (symbol)
+    return symbol->addr;
+
   /* === end === */
   return -1;
 }
 
 /* Writes the SymbolTable TABLE to OUTPUT. */
-void write_table(SymbolTable* table, FILE* output) {
+void write_table(SymbolTable *table, FILE *output) {
   if (!table || !output) {
     return;
   }
   for (uint32_t i = 0; i < table->len; i++) {
-    Symbol* entry = &table->entries[i];
+    Symbol *entry = &table->entries[i];
     write_sym(output, entry->addr, entry->name);
   }
 }
 
 /* Increase the capacity of the table by INCREMENT_OF_CAP */
-void resize_table(SymbolTable* table) {
+void resize_table(SymbolTable *table) {
   /* IMPLEMENT ME */
   /* === start === */
-  
-  
-  
+  if (!table)
+    return;
+
+  table->cap += INCREMENT_OF_CAP;
+  Symbol *entries =
+      (Symbol *)realloc(table->entries, table->cap * sizeof(Symbol));
+
+  if (!entries)
+    allocation_failed();
+
+  table->entries = entries;
+
   /* === end === */
 }
