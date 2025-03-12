@@ -67,6 +67,19 @@ int translate_num(long int *output, const char *str, ImmType type) {
   /* IMPLEMENT ME */
   /* === start === */
 
+  char *endptr;
+  long result;
+
+  result = strtol(str, &endptr, 0);
+
+  if (*endptr != '\0')
+    return -1;
+
+  if (!is_valid_imm(result, type))
+    return -1;
+
+  *output = result;
+
   /* === end === */
   return 0;
 }
@@ -116,8 +129,18 @@ int is_valid_imm(long imm, ImmType type) {
     return 1;
   case IMM_12_SIGNED:
     return imm >= -2048 && imm <= 2047;
-  /* IMPLEMENT ME */
-  /* === start === */
+
+    /* IMPLEMENT ME */
+    /* === start === */
+
+  case IMM_5_UNSIGNED:
+    return imm >= 0 && imm <= 31; // 2^5 - 1
+  case IMM_13_SIGNED:
+    return imm >= -4096 && imm <= 4095; // -2^12 to 2^12-1
+  case IMM_20_UNSIGNED:
+    return imm >= 0 && imm <= 1048575; // 2^20 - 1
+  case IMM_21_SIGNED:
+    return imm >= -1048576 && imm <= 1048575; // -2^20 to 2^20-1
 
   /* === end === */
   default:
