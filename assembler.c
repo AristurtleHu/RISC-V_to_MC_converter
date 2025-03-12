@@ -265,8 +265,7 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
 
     int result = translate_inst(output, name, args, num_args, addr, table);
 
-    if (result == -1) {
-      // fail
+    if (result == -1) { // fail
       raise_instruction_error(inst->line_number, name, args, num_args);
       error = -1;
     }
