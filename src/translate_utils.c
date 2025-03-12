@@ -115,7 +115,16 @@ static const RegEntry reg_map[] = {
 int translate_reg(const char *str) {
   /* IMPLEMENT ME */
   /* === start === */
-  // TODO: may use the provided reg_map
+
+  if (!str)
+    return -1;
+
+  for (int i = 0; i < 32; i++) { // 32 register in all
+    if (strcmp(str, reg_map[i].name) == 0) {
+      return reg_map[i].number;
+    }
+  }
+
   /* === end === */
   return -1;
 }

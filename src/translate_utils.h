@@ -20,7 +20,7 @@ typedef enum {
   IMM_5_UNSIGNED,
   IMM_13_SIGNED,
   IMM_20_UNSIGNED,
-  IMM_21_SIGNED, // TODO: might change, just write to pass compile
+  IMM_21_SIGNED,
 
   /* === end === */
 } ImmType;
