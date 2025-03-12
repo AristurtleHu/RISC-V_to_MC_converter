@@ -99,6 +99,14 @@ unsigned transform_beqz(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
 
+  if (num_args != 2)
+    return 0;
+
+  // rs1, x0, label
+  char *new_args[3] = {args[0], "x0", args[1]};
+
+  return add_to_block(blk, "beq", new_args, 3);
+
   /* === end === */
   return 0;
 }
@@ -106,6 +114,14 @@ unsigned transform_beqz(Block *blk, char **args, int num_args) {
 unsigned transform_bnez(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
+
+  if (num_args != 2)
+    return 0;
+
+  // rs1, x0, label
+  char *new_args[3] = {args[0], "x0", args[1]};
+
+  return add_to_block(blk, "bne", new_args, 3);
 
   /* === end === */
   return 0;
@@ -230,6 +246,10 @@ unsigned write_pass_one(Block *blk, const char *name, char **args,
   /* What about general instructions? */
   /* IMPLEMENT ME */
   /* === start === */
+
+  int result = add_to_block(blk, name, args, num_args);
+  if (result == 0) // success
+    return 1;
 
   /* === end === */
   return 0;
