@@ -259,10 +259,23 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
     /* IMPLEMENT ME */
     /* === start === */
 
+    uint32_t addr = 4 * i;
+    char *name = inst->name;
+    char **args = inst->args;
+    int num_args = inst->arg_num;
+
+    int result = translate_inst(output, name, args, num_args, addr, table);
+
+    if (result == -1) {
+      // fail
+      raise_instruction_error(inst->line_number, name, args, num_args);
+      error = -1;
+    }
+
     /* === end === */
   }
 
-  return 0;
+  return error;
 }
 
 static void close_files(int count, ...) {
