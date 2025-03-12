@@ -119,7 +119,7 @@ int translate_reg(const char *str) {
   if (!str)
     return -1;
 
-  for (int i = 0; i < 32; i++) { // 32 register in all
+  for (int i = 0; i < 64; i++) { // 32 register in all (2 types)
     if (strcmp(str, reg_map[i].name) == 0) {
       return reg_map[i].number;
     }

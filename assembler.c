@@ -28,7 +28,6 @@ const char *IGNORE_CHARS = " \f\n\r\t\v,()";
  * Helper Functions
  *******************************/
 
-/* you should not be calling this function yourself. */
 static void raise_label_error(uint32_t input_line, const char *label) {
   write_to_log("Error - invalid label at line %d: %s\n", input_line, label);
 }
