@@ -21,6 +21,7 @@ typedef enum {
   IMM_13_SIGNED,
   IMM_20_UNSIGNED,
   IMM_21_SIGNED,
+  IMM_32_SIGNED,
 
   /* === end === */
 } ImmType;

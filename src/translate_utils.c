@@ -150,6 +150,8 @@ int is_valid_imm(long imm, ImmType type) {
     return imm >= 0 && imm <= 1048575; // 2^20 - 1
   case IMM_21_SIGNED:
     return imm >= -1048576 && imm <= 1048575; // -2^20 to 2^20-1
+  case IMM_32_SIGNED:
+    return imm >= -2147483648 && imm <= 2147483647; // -2^31 to 2^31-1
 
   /* === end === */
   default:
