@@ -45,7 +45,7 @@ bgeu s4 s5 10
 
 lui x30 107592
 auipc a1 717430
-jal x13 label2
+jal x13 label2 # 41
 
 beqz x1 -4
 bnez x2 -8
@@ -53,7 +53,7 @@ li x1 30
 mv s1 a1
 j -20
 jr ra
-jal label1
+jal label1 # 48
 jalr ra
 lw s1 label1
 
