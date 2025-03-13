@@ -301,39 +301,35 @@ unsigned transform_lw(Block *blk, char **args, int num_args) {
   if (num_args != 2)
     return 0;
 
-  if (add_to_block(blk, "lw", args, num_args) == 0)
-    return 1; // TODO: delete when implement lw
+  char *rd = args[0];
+  char *label = args[1];
 
-  // char *rd = args[0];
-  // char *label = args[1];
+  // Create a temporary label for auipc
+  char *auipc = malloc(32);
+  char *lw = malloc(32);
+  if (!auipc || !lw) {
+    if (auipc)
+      free(auipc);
+    if (lw)
+      free(lw);
 
-  // // Create a temporary label for auipc
-  // char *auipc = malloc(32);
-  // char *lw = malloc(32);
-  // if (!auipc || !lw) {
-  //   if (auipc)
-  //     free(auipc);
-  //   if (lw)
-  //     free(lw);
+    allocation_failed(); // TODO: check whether need this
+    return 0;
+  }
 
-  //   allocation_failed(); // TODO: check whether need this
-  //   return 0;
-  // }
+  sprintf(auipc, "%s", label);
+  sprintf(lw, "%s", label);
 
-  // int64_t addr = get_addr_for_symbol(blk->symtbl, label);
-  // sprintf(auipc, "%%pcrel_hi(%s)", label);
-  // sprintf(lw, "%s(%s)", label, rd);
+  char *auipc_args[2] = {rd, auipc};
+  if (add_to_block(blk, "auipc", auipc_args, 2) == 0) {
+    char *lw_args[2] = {rd, lw};
+    if (add_to_block(blk, "lw", lw_args, 2) != 0)
+      return 2;
+  }
 
-  // char *auipc_args[2] = {rd, auipc};
-  // if (add_to_block(blk, "auipc", auipc_args, 2) == 0) {
-  //   char *lw_args[2] = {rd, lw};
-  //   if (add_to_block(blk, "lw", lw_args, 2) != 0)
-  //     return 2;
-  // }
-
-  // // fail
-  // free(auipc);
-  // free(lw);
+  // fail
+  free(auipc);
+  free(lw);
 
   /* === end === */
   return 0;
@@ -442,6 +438,26 @@ int write_rtype(FILE *output, const InstrInfo *info, char **args,
   /* IMPLEMENT ME */
   /* === start === */
 
+  // 3 for R-type
+  if (num_args != 3)
+    return -1;
+
+  int rd_num = translate_reg(args[0]), rs1_num = translate_reg(args[1]),
+      rs2_num = translate_reg(args[2]);
+
+  if (rd_num == -1 || rs1_num == -1 || rs2_num == -1)
+    return -1;
+
+  uint32_t instruction = 0;
+  instruction |= (info->opcode & 0x7F);         // opcode (7 bits)
+  instruction |= ((rd_num & 0x1F) << 7);        // rd (5 bits)
+  instruction |= ((info->funct3 & 0x7) << 12);  // funct3 (3 bits)
+  instruction |= ((rs1_num & 0x1F) << 15);      // rs1 (5 bits)
+  instruction |= ((rs2_num & 0x1F) << 20);      // rs2 (5 bits)
+  instruction |= ((info->funct7 & 0x7F) << 25); // funct7 (7 bits)
+
+  write_inst_hex(output, instruction);
+
   /* === end === */
   return 0;
 }
@@ -466,6 +482,29 @@ int write_stype(FILE *output, const InstrInfo *info, char **args,
                 size_t num_args) {
   /* IMPLEMENT ME */
   /* === start === */
+
+  // S-type: sw rs2, imm(rs1)
+  // rs2 imm rs1
+
+  if (num_args != 3) // 3 args
+    return -1;
+
+  int rs2 = translate_reg(args[0]);
+  long imm;
+  int rs1 = translate_reg(args[2]);
+  int error = translate_num(&imm, args[1], IMM_12_SIGNED);
+  if (rs2 == -1 || error == -1 || rs1 == -1)
+    return -1;
+
+  uint32_t instruction = 0;
+  instruction |= (info->opcode & 0x7F);        // opcode (7 bits)
+  instruction |= ((info->funct3 & 0x7) << 12); // funct3 (3 bits)
+  instruction |= ((rs1 & 0x1F) << 15);         // rs1 (5 bits)
+  instruction |= ((rs2 & 0x1F) << 20);         // rs2 (5 bits)
+  instruction |= ((imm & 0x1F) << 7);          // imm[4:0]
+  instruction |= (((imm >> 5) & 0x7F) << 25);  // imm[11:5]
+
+  write_inst_hex(output, instruction);
 
   /* === end === */
   return 0;
@@ -510,6 +549,33 @@ int write_ujtype(FILE *output, const InstrInfo *info, char **args,
                  size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
+
+  // UJ-type format: jal rd, label
+  if (num_args != 2)
+    return -1;
+
+  int rd = translate_reg(args[0]);
+  if (rd == -1)
+    return -1;
+
+  int64_t label_addr;
+  label_addr = get_addr_for_symbol(symtbl, args[1]);
+  if (label_addr == -1)
+    return -1;
+
+  int64_t offset = label_addr - addr;
+  // if (offset > ((1 << 20) - 1) || offset < -(1 << 20))
+  //   return -1;
+
+  uint32_t instruction = 0;
+  instruction |= (info->opcode & 0x7F);           // opcode (7 bits)
+  instruction |= ((rd & 0x1F) << 7);              // rd (5 bits)
+  instruction |= (((offset >> 20) & 0x1) << 31);  // imm[20]
+  instruction |= (((offset >> 1) & 0x3FF) << 21); // imm[10:1]
+  instruction |= (((offset >> 11) & 0x1) << 20);  // imm[11]
+  instruction |= (((offset >> 12) & 0xFF) << 12); // imm[19:12]
+
+  write_inst_hex(output, instruction);
 
   /* === end === */
   return 0;
