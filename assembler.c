@@ -263,6 +263,22 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
     char **args = inst->args;
     int num_args = inst->arg_num;
 
+    if (strcmp(name, "auipc") == 0) {
+      Instr *next_inst = &blk->entries[i + 1];
+      if (strcmp(next_inst->name, "lw") == 0 &&
+          strcmp(next_inst->args[1], args[1]) == 0) {
+        // lw pseudo, need to resolve the label
+        int64_t address = get_addr_for_symbol(table, args[1]);
+        if (address == -1) {
+          raise_instruction_error(inst->line_number, "lw", args, num_args);
+          // TODO: the line_num is wrong, we need the original line_num of "lw"
+          error = -1;
+          i++;
+          continue;
+        }
+      }
+    }
+
     int result = translate_inst(output, name, args, num_args, addr, table);
 
     if (result == -1) { // fail
