@@ -267,8 +267,9 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
 
     if (result == -1) { // fail
       raise_instruction_error(inst->line_number, name, args, num_args);
-      error = -1; // TODO: meet problem with line_number as it is not passed in
-                  // write_pass_one()
+      error = -1; // TODO: meet problem with line_number
+                  // write_pass_one() add an argument of line_num
+                  // change block add_to_block() get line_num
     }
 
     /* === end === */
