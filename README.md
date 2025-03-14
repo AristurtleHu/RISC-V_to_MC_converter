@@ -1,1 +1,6 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/EwNoVAEg)
+A basic RISC-V assembler that converts assembly instructions into machine code. This implementation will support the .data segment of assembly files and focus specifically on the RV32I instruction set along with partial RV32M extensions.
+
+The assembler operates in two phases:
+
+- Phase 1: Parse the assembly source (.S file), remove comments, populate a symbol table with labels, and generate an intermediate representation containing basic instructions and expanded pseudo-instructions.
+- Phase 2: Using the symbol table and intermediate representation, translate each instruction into its corresponding machine code (binary representation) and output the result in hexadecimal format.
