@@ -444,7 +444,7 @@ int write_rtype(FILE *output, const InstrInfo *info, char **args,
   /* IMPLEMENT ME */
   /* === start === */
 
-  // 3 for R-type
+  // R-type format: add rd, rs1, rs2
   if (num_args != 3)
     return -1;
 
@@ -489,7 +489,7 @@ int write_stype(FILE *output, const InstrInfo *info, char **args,
   /* IMPLEMENT ME */
   /* === start === */
 
-  // S-type: sw rs2, imm(rs1)
+  // S-type format: sw rs2, imm(rs1)
   // rs2 imm rs1
 
   if (num_args != 3) // 3 args
@@ -530,6 +530,41 @@ int write_sbtype(FILE *output, const InstrInfo *info, char **args,
                  size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
+
+  // SB-type format: beq rs1, rs2, label
+  if (num_args != 3)
+    return -1;
+
+  int rs1 = translate_reg(args[0]);
+  int rs2 = translate_reg(args[1]);
+  if (rs1 == -1 || rs2 == -1)
+    return -1;
+
+  int64_t label_addr, offset;
+  int result = translate_num(&offset, args[2], IMM_13_SIGNED); // offset
+  label_addr = get_addr_for_symbol(symtbl, args[2]);           // direct address
+
+  if (label_addr == -1 && result == -1)
+    return -1;
+
+  // If the label is in the symbol table, calculate the relative offset
+  if (result == -1)
+    offset = label_addr - addr;
+
+  if (!is_valid_imm(offset, IMM_13_SIGNED))
+    return -1;
+
+  uint32_t instruction = 0;
+  instruction |= (info->opcode & 0x7F);          // opcode (7 bits)
+  instruction |= ((info->funct3 & 0x7) << 12);   // funct3 (3 bits)
+  instruction |= ((rs1 & 0x1F) << 15);           // rs1 (5 bits)
+  instruction |= ((rs2 & 0x1F) << 20);           // rs2 (5 bits)
+  instruction |= (((offset >> 11) & 0x1) << 7);  // imm[11]
+  instruction |= (((offset >> 1) & 0xF) << 8);   // imm[4:1]
+  instruction |= (((offset >> 5) & 0x3F) << 25); // imm[10:5]
+  instruction |= (((offset >> 12) & 0x1) << 31); // imm[12]
+
+  write_inst_hex(output, instruction);
 
   /* === end === */
   return 0;
