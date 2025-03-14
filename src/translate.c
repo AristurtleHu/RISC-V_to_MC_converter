@@ -143,7 +143,7 @@ unsigned transform_bnez(Block *blk, char **args, int num_args) {
 unsigned transform_li(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-
+  // TODO: finish memory leak
   if (num_args != 2)
     return 0;
 
@@ -318,32 +318,12 @@ unsigned transform_lw(Block *blk, char **args, int num_args) {
   char *rd = args[0];
   char *label = args[1];
 
-  // Create a temporary label for auipc
-  char *auipc = malloc(32);
-  char *lw = malloc(32);
-  if (!auipc || !lw) {
-    free(auipc);
-    free(lw);
-    allocation_failed();
-    return 0;
-  }
-
-  sprintf(auipc, "%s", label);
-  sprintf(lw, "%s", label);
-  free(args[0]);
-  free(args[1]);
-  free(args);
-
-  char *auipc_args[2] = {rd, auipc};
+  char *auipc_args[2] = {rd, label};
   if (add_to_block(blk, "auipc", auipc_args, 2) == 0) {
-    char *lw_args[2] = {rd, lw};
+    char *lw_args[2] = {rd, label};
     if (add_to_block(blk, "lw", lw_args, 2) == 0)
       return 2;
   }
-
-  // fail
-  free(auipc);
-  free(lw);
 
   /* === end === */
   return 0;
@@ -484,8 +464,7 @@ int write_rtype(FILE *output, const InstrInfo *info, char **args,
   write_sbtype for detailed relative address calculation.
  */
 int write_itype(FILE *output, const InstrInfo *info, char **args,
-                size_t num_args, uint32_t addr __attribute__((unused)),
-                SymbolTable *symtbl __attribute__((unused))) {
+                size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
 
@@ -507,6 +486,25 @@ int write_itype(FILE *output, const InstrInfo *info, char **args,
     rs1 = 0;
     if (strcmp(info->name, "ebreak") == 0)
       imm = 1;
+
+  } else if (strcmp(info->name, "lw") == 0 && num_args == 2) { // lw x0, label
+    rd = translate_reg(args[0]);
+    rs1 = rd;
+
+    int64_t label_addr, offset;
+    int result = translate_num(&offset, args[1], IMM_32_SIGNED); // offset
+    label_addr = get_addr_for_symbol(symtbl, args[1]); // direct address
+
+    if (label_addr == -1 && result == -1)
+      return -1;
+
+    if (result == -1)
+      offset = label_addr - (addr - 4); // same addr as auipc
+
+    if (!is_valid_imm(offset, IMM_32_SIGNED))
+      return -1;
+
+    imm = offset & 0xFFF;
 
   } else {
     if (num_args != 3)
@@ -642,8 +640,7 @@ int write_sbtype(FILE *output, const InstrInfo *info, char **args,
   write_sbtype for detailed relative address calculation.
  */
 int write_utype(FILE *output, const InstrInfo *info, char **args,
-                size_t num_args, uint32_t addr __attribute__((unused)),
-                SymbolTable *symtbl __attribute__((unused))) {
+                size_t num_args, uint32_t addr, SymbolTable *symtbl) {
   /* IMPLEMENT ME */
   /* === start === */
 
@@ -656,9 +653,38 @@ int write_utype(FILE *output, const InstrInfo *info, char **args,
     return -1;
 
   int64_t value;
-  int result = translate_num(&value, args[1], IMM_20_UNSIGNED);
-  if (result == -1)
-    return -1;
+
+  // auipc x0, label
+  if (strcmp(info->name, "auipc") == 0) {
+    int64_t label_addr, offset = 0;
+    int result = translate_num(&offset, args[1], IMM_32_SIGNED); // offset
+
+    if (is_valid_imm(offset, IMM_20_UNSIGNED)) { // the normal auipc
+      value = offset;
+    } else {
+      label_addr = get_addr_for_symbol(symtbl, args[1]); // direct address
+
+      if (label_addr == -1 && result == -1)
+        return -1;
+
+      if (result == -1)
+        offset = label_addr - addr;
+
+      if (!is_valid_imm(offset, IMM_32_SIGNED))
+        return -1;
+
+      value = (offset >> 12) & 0xFFFFF;
+
+      // If lower 12 bits represent a negative number, adjust the upper part
+      if (offset & 0x800)
+        value += 1;
+    }
+
+  } else {
+    int result = translate_num(&value, args[1], IMM_20_UNSIGNED);
+    if (result == -1)
+      return -1;
+  }
 
   uint32_t instruction = 0;
   instruction |= (info->opcode & 0x7F);     // opcode (7 bits)
