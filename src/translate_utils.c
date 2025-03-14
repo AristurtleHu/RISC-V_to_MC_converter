@@ -119,7 +119,8 @@ int translate_reg(const char *str) {
   if (!str)
     return -1;
 
-  for (int i = 0; i < 64; i++) { // 32 register in all (2 types)
+  // there are two "8" in the map, so total size is 65
+  for (int i = 0; i < 65; i++) { // 32 register in all (2 types)
     if (strcmp(str, reg_map[i].name) == 0) {
       return reg_map[i].number;
     }

@@ -214,7 +214,6 @@ int pass_one(FILE *input, Block *blk, SymbolTable *table) {
 
     // Write the instruction to the block
     blk->line_number = input_line;
-    int instr_num = blk->len;
 
     if (write_pass_one(blk, name, args, num_args) == 0) {
       raise_instruction_error(input_line, name, args, num_args);
@@ -229,16 +228,17 @@ int pass_one(FILE *input, Block *blk, SymbolTable *table) {
   return error;
 }
 
-int lw_expand(Instr *auipc, Instr *lw, SymbolTable *table) {
-  int64_t addr = get_addr_for_symbol(table, auipc->args[1]);
-  if (addr == -1) {
+int lw_expand(Instr *auipc, Instr *lw, SymbolTable *table, uint32_t addr) {
+  int64_t label_addr = get_addr_for_symbol(table, auipc->args[1]);
+  if (label_addr == -1) {
     raise_instruction_error(auipc->line_number, auipc->name, auipc->args,
                             auipc->arg_num);
     raise_instruction_error(lw->line_number, lw->name, lw->args, lw->arg_num);
     return -1;
   }
 
-  long imm = addr - auipc->line_number * 4;
+  long imm = label_addr - addr;
+
   if (!is_valid_imm(imm, IMM_32_SIGNED)) {
     raise_instruction_error(auipc->line_number, auipc->name, auipc->args,
                             auipc->arg_num);
@@ -246,11 +246,25 @@ int lw_expand(Instr *auipc, Instr *lw, SymbolTable *table) {
     return -1;
   }
 
-  // auipc rd, imm; lw rd, imm(rd)
   free(auipc->args[1]);
+  free(lw->args[2]);
   free(lw->args[1]);
+  // auipc rd, imm; lw rd, imm(rd)
   lw->arg_num = 3;
   lw->args[2] = lw->args[0];
+
+  if (is_valid_imm(imm, IMM_12_SIGNED)) { // auipc 0
+    char *lw_imm = malloc(32);
+    if (!lw_imm) {
+      allocation_failed();
+      return -1;
+    }
+
+    sprintf(lw_imm, "%ld", imm);
+    lw->args[1] = lw_imm;
+    auipc->args[1] = "0";
+    return 0;
+  }
 
   char *auipc_imm = malloc(32);
   char *lw_imm = malloc(32);
@@ -267,7 +281,7 @@ int lw_expand(Instr *auipc, Instr *lw, SymbolTable *table) {
 
   // If lower 12 bits represent a negative number, adjust the upper part
   if (lower & 0x800)
-    upper += 1; // TODO: remember it may exceed int range
+    upper += 1;
 
   sprintf(auipc_imm, "%ld", upper);
   sprintf(lw_imm, "%ld", lower);
@@ -306,12 +320,12 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
   /* Variables for argument parsing. */
   int error = 0;
   /* Process each instruction */
-  for (uint32_t i = 0; i < blk->len; ++i) {
+  uint32_t addr = 0;
+  for (uint32_t i = 0; i < blk->len; ++i, addr += 4) {
     Instr *inst = &blk->entries[i];
     /* IMPLEMENT ME */
     /* === start === */
 
-    uint32_t addr = i * 4;
     char *name = inst->name;
     char **args = inst->args;
     int num_args = inst->arg_num;
@@ -320,9 +334,10 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
       Instr *next_inst = &blk->entries[i + 1];
       if (strcmp(next_inst->name, "lw") == 0 && next_inst->arg_num == 2) {
         // lw pseudo, need to resolve the label
-        error = lw_expand(inst, next_inst, table);
+        error = lw_expand(inst, next_inst, table, addr);
         if (error == -1) {
           i++; // skip the next lw
+          addr += 4;
           continue;
         }
       }

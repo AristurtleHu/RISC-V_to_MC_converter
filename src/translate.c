@@ -170,13 +170,17 @@ unsigned transform_li(Block *blk, char **args, int num_args) {
       return 0;
     }
 
+    free(args[0]);
+    free(args[1]);
+    free(args);
+
     // upper 20 bits for lui, and lower 12 bits for addi
     long upper = (immediate >> 12) & 0xFFFFF;
     long lower = immediate & 0xFFF;
 
     // If lower 12 bits represent a negative number, adjust the upper part
     if (lower & 0x800)
-      upper += 1; // TODO: remember it may exceed int range
+      upper += 1;
 
     sprintf(lui_imm, "%ld", upper);
     sprintf(addi_imm, "%ld", lower);
@@ -326,6 +330,10 @@ unsigned transform_lw(Block *blk, char **args, int num_args) {
 
   sprintf(auipc, "%s", label);
   sprintf(lw, "%s", label);
+  free(args[0]);
+  free(args[1]);
+  free(args);
+
   char *auipc_args[2] = {rd, auipc};
   if (add_to_block(blk, "auipc", auipc_args, 2) == 0) {
     char *lw_args[2] = {rd, lw};
@@ -448,18 +456,18 @@ int write_rtype(FILE *output, const InstrInfo *info, char **args,
   if (num_args != 3)
     return -1;
 
-  int rd_num = translate_reg(args[0]), rs1_num = translate_reg(args[1]),
-      rs2_num = translate_reg(args[2]);
+  int rd = translate_reg(args[0]), rs1 = translate_reg(args[1]),
+      rs2 = translate_reg(args[2]);
 
-  if (rd_num == -1 || rs1_num == -1 || rs2_num == -1)
+  if (rd == -1 || rs1 == -1 || rs2 == -1)
     return -1;
 
   uint32_t instruction = 0;
   instruction |= (info->opcode & 0x7F);         // opcode (7 bits)
-  instruction |= ((rd_num & 0x1F) << 7);        // rd (5 bits)
+  instruction |= ((rd & 0x1F) << 7);            // rd (5 bits)
   instruction |= ((info->funct3 & 0x7) << 12);  // funct3 (3 bits)
-  instruction |= ((rs1_num & 0x1F) << 15);      // rs1 (5 bits)
-  instruction |= ((rs2_num & 0x1F) << 20);      // rs2 (5 bits)
+  instruction |= ((rs1 & 0x1F) << 15);          // rs1 (5 bits)
+  instruction |= ((rs2 & 0x1F) << 20);          // rs2 (5 bits)
   instruction |= ((info->funct7 & 0x7F) << 25); // funct7 (7 bits)
 
   write_inst_hex(output, instruction);
@@ -476,9 +484,67 @@ int write_rtype(FILE *output, const InstrInfo *info, char **args,
   write_sbtype for detailed relative address calculation.
  */
 int write_itype(FILE *output, const InstrInfo *info, char **args,
-                size_t num_args, uint32_t addr, SymbolTable *symtbl) {
+                size_t num_args, uint32_t addr __attribute__((unused)),
+                SymbolTable *symtbl __attribute__((unused))) {
   /* IMPLEMENT ME */
   /* === start === */
+
+  // I-type format:
+  // addi rd, rs1, imm
+  // lw rd, imm(rs1)
+  // ecall/ebreak (no args)
+
+  int rd = -1, rs1 = -1;
+  long imm = 0;
+  int error = 0;
+
+  // ecall/ebreak (no args)
+  if (strcmp(info->name, "ecall") == 0 || strcmp(info->name, "ebreak") == 0) {
+    if (num_args != 0)
+      return -1;
+
+    rd = 0;
+    rs1 = 0;
+    if (strcmp(info->name, "ebreak") == 0)
+      imm = 1;
+
+  } else {
+    if (num_args != 3)
+      return -1;
+
+    // load instructions
+    if (info->name[0] == 'l') {
+      rd = translate_reg(args[0]);
+      rs1 = translate_reg(args[2]);
+      error = translate_num(&imm, args[1], info->imm_type);
+    }
+
+    // others
+    else {
+      rd = translate_reg(args[0]);
+      rs1 = translate_reg(args[1]);
+      error = translate_num(&imm, args[2], info->imm_type);
+    }
+
+    if (rd == -1 || rs1 == -1 || error == -1)
+      return -1;
+  }
+
+  uint32_t instruction = 0;
+  instruction |= (info->opcode & 0x7F);        // opcode (7 bits)
+  instruction |= ((rd & 0x1F) << 7);           // rd (5 bits)
+  instruction |= ((info->funct3 & 0x7) << 12); // funct3 (3 bits)
+  instruction |= ((rs1 & 0x1F) << 15);         // rs1 (5 bits)
+
+  // Handle funct7 bits for srai (other s-head instructions have funct7 = 0)
+  if (strcmp(info->name, "srai") == 0) {
+    instruction |= ((imm & 0x1F) << 20);          // shamt (5 bits)
+    instruction |= ((info->funct7 & 0x7F) << 25); // funct7 (7 bits)
+  } else {
+    instruction |= ((imm & 0xFFF) << 20); // imm[11:0] (12 bits)
+  }
+
+  write_inst_hex(output, instruction);
 
   /* === end === */
   return 0;
@@ -576,7 +642,8 @@ int write_sbtype(FILE *output, const InstrInfo *info, char **args,
   write_sbtype for detailed relative address calculation.
  */
 int write_utype(FILE *output, const InstrInfo *info, char **args,
-                size_t num_args, uint32_t addr, SymbolTable *symtbl) {
+                size_t num_args, uint32_t addr __attribute__((unused)),
+                SymbolTable *symtbl __attribute__((unused))) {
   /* IMPLEMENT ME */
   /* === start === */
 

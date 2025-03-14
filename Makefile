@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -std=c11 # -Wpedantic -Wall -Wextra -Werror
+CFLAGS = -g -std=c11 -Wpedantic -Wall -Wextra -Werror
 
 SRCS = src/tables.c src/utils.c src/translate_utils.c src/translate.c src/block.c assembler.c
 OBJS = $(SRCS:.c=.o)
