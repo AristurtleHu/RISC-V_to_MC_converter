@@ -161,8 +161,8 @@ unsigned transform_li(Block *blk, char **args, int num_args) {
   // two instructions
   error = translate_num(&immediate, args[1], IMM_32_SIGNED);
   if (error == 0) {
-    char *lui_imm = malloc(32);
-    char *addi_imm = malloc(32);
+    char *lui_imm = malloc(10);
+    char *addi_imm = malloc(10);
     if (!lui_imm || !addi_imm) {
       free(lui_imm);
       free(addi_imm);
@@ -175,8 +175,11 @@ unsigned transform_li(Block *blk, char **args, int num_args) {
     long lower = immediate & 0xFFF;
 
     // If lower 12 bits represent a negative number, adjust the upper part
-    if (lower & 0x800)
+    if (lower & 0x800) {
       upper += 1;
+      lower = (int32_t)(lower |
+                        0xFFFFF000); // Sign-extend the 12-bit value to 32 bits
+    }
 
     sprintf(lui_imm, "%ld", upper);
     sprintf(addi_imm, "%ld", lower);
@@ -184,12 +187,12 @@ unsigned transform_li(Block *blk, char **args, int num_args) {
     char *lui_args[2] = {rd, lui_imm};
     if (add_to_block(blk, "lui", lui_args, 2) == 0) {
       char *addi_args[3] = {rd, rd, addi_imm};
-      if (add_to_block(blk, "addi", addi_args, 3) == 0)
+      if (add_to_block(blk, "addi", addi_args, 3) == 0) {
+        free(lui_imm);
+        free(addi_imm);
         return 2;
+      }
     }
-
-    free(lui_imm);
-    free(addi_imm);
   }
 
   /* === end === */
@@ -488,14 +491,12 @@ int write_itype(FILE *output, const InstrInfo *info, char **args,
     rs1 = rd;
 
     int64_t label_addr, offset;
-    int result = translate_num(&offset, args[1], IMM_32_SIGNED); // offset
     label_addr = get_addr_for_symbol(symtbl, args[1]); // direct address
 
-    if (label_addr == -1 && result == -1)
+    if (label_addr == -1)
       return -1;
 
-    if (result == -1)
-      offset = label_addr - (addr - 4); // same addr as auipc
+    offset = label_addr - (addr - 4); // same addr as auipc
 
     if (!is_valid_imm(offset, IMM_32_SIGNED))
       return -1;
