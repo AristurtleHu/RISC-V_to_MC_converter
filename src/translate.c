@@ -143,7 +143,7 @@ unsigned transform_bnez(Block *blk, char **args, int num_args) {
 unsigned transform_li(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
-  // TODO: finish memory leak
+
   if (num_args != 2)
     return 0;
 
@@ -169,10 +169,6 @@ unsigned transform_li(Block *blk, char **args, int num_args) {
       allocation_failed();
       return 0;
     }
-
-    free(args[0]);
-    free(args[1]);
-    free(args);
 
     // upper 20 bits for lui, and lower 12 bits for addi
     long upper = (immediate >> 12) & 0xFFFFF;
