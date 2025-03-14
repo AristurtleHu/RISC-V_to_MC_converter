@@ -216,16 +216,12 @@ int pass_one(FILE *input, Block *blk, SymbolTable *table) {
     blk->line_number = input_line;
     int instr_num = blk->len;
 
-    offset += 4; // Each line is 4 bytes except for wrong instructions
-    // wrong instruction detected in pass_two() is counted in
-
     if (write_pass_one(blk, name, args, num_args) == 0) {
       raise_instruction_error(input_line, name, args, num_args);
       error = -1;
     }
 
-    if (blk->len - instr_num > 1)
-      offset += 4; // if pseudo-instr expand into 2 instr , add 4 bytes
+    offset = blk->len * 4;
 
     /* === end === */
   }
