@@ -580,6 +580,26 @@ int write_utype(FILE *output, const InstrInfo *info, char **args,
   /* IMPLEMENT ME */
   /* === start === */
 
+  // U-type format: lui rd, imm
+  if (num_args != 2)
+    return -1;
+
+  int rd = translate_reg(args[0]);
+  if (rd == -1)
+    return -1;
+
+  int64_t value;
+  int result = translate_num(&value, args[1], IMM_20_UNSIGNED);
+  if (result == -1)
+    return -1;
+
+  uint32_t instruction = 0;
+  instruction |= (info->opcode & 0x7F);     // opcode (7 bits)
+  instruction |= ((rd & 0x1F) << 7);        // rd (5 bits)
+  instruction |= ((value & 0xFFFFF) << 12); // imm[31:12] (20 bits)
+
+  write_inst_hex(output, instruction);
+
   /* === end === */
   return 0;
 }
