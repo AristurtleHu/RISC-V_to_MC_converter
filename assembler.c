@@ -189,8 +189,6 @@ int pass_one(FILE *input, Block *blk, SymbolTable *table) {
     if (label_check == -1) // invalid label or addition to table fails
       error = -1;
 
-    offset += 4; // Each line is 4 bytes except for alone comments
-
     if (label_check != 0)
       name = strtok(NULL, IGNORE_CHARS); // get instruction
     if (name == NULL)
@@ -217,6 +215,10 @@ int pass_one(FILE *input, Block *blk, SymbolTable *table) {
     // Write the instruction to the block
     blk->line_number = input_line;
     int instr_num = blk->len;
+
+    offset += 4; // Each line is 4 bytes except for wrong instructions
+    // wrong instruction detected in pass_two() is counted in
+
     if (write_pass_one(blk, name, args, num_args) == 0) {
       raise_instruction_error(input_line, name, args, num_args);
       error = -1;
@@ -313,7 +315,7 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
     /* IMPLEMENT ME */
     /* === start === */
 
-    uint32_t addr = inst->line_number * 4;
+    uint32_t addr = i * 4;
     char *name = inst->name;
     char **args = inst->args;
     int num_args = inst->arg_num;
