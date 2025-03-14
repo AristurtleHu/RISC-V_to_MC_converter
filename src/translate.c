@@ -163,14 +163,14 @@ unsigned transform_li(Block *blk, char **args, int num_args) {
   if (error == 0) {
     char *lui_imm = malloc(32);
     if (!lui_imm) {
-      allocation_failed(); // TODO: check whether need this
+      allocation_failed();
       return 0;
     }
 
     char *addi_imm = malloc(32);
     if (!addi_imm) {
       free(lui_imm);
-      allocation_failed(); // TODO: check whether need this
+      allocation_failed();
       return 0;
     }
 
@@ -313,7 +313,7 @@ unsigned transform_lw(Block *blk, char **args, int num_args) {
     if (lw)
       free(lw);
 
-    allocation_failed(); // TODO: check whether need this
+    allocation_failed();
     return 0;
   }
 

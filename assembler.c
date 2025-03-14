@@ -215,6 +215,7 @@ int pass_one(FILE *input, Block *blk, SymbolTable *table) {
     }
 
     // Write the instruction to the block
+    blk->line_number = input_line;
     if (write_pass_one(blk, name, args, num_args) == 0) {
       raise_instruction_error(input_line, name, args, num_args);
       error = -1;
@@ -259,7 +260,7 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
     /* IMPLEMENT ME */
     /* === start === */
 
-    uint32_t addr = 4 * i; // TODO: wrong
+    uint32_t addr = inst->line_number * 4;
     char *name = inst->name;
     char **args = inst->args;
     int num_args = inst->arg_num;
@@ -271,8 +272,9 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
         // lw pseudo, need to resolve the label
         int64_t address = get_addr_for_symbol(table, args[1]);
         if (address == -1) {
-          raise_instruction_error(inst->line_number, "lw", args, num_args);
-          // TODO: the line_num is wrong, we need the original line_num of "lw"
+          raise_instruction_error(inst->line_number, name, args, num_args);
+          raise_instruction_error(next_inst->line_number, next_inst->name,
+                                  next_inst->args, next_inst->arg_num);
           error = -1;
           i++;
           continue;
@@ -284,9 +286,7 @@ int pass_two(Block *blk, SymbolTable *table, FILE *output) {
 
     if (result == -1) { // fail
       raise_instruction_error(inst->line_number, name, args, num_args);
-      error = -1; // TODO: meet problem with line_number
-                  // write_pass_one() add an argument of line_num
-                  // change block add_to_block() get line_num
+      error = -1;
     }
 
     /* === end === */
