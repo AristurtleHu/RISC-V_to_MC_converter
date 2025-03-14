@@ -162,14 +162,10 @@ unsigned transform_li(Block *blk, char **args, int num_args) {
   error = translate_num(&immediate, args[1], IMM_32_SIGNED);
   if (error == 0) {
     char *lui_imm = malloc(32);
-    if (!lui_imm) {
-      allocation_failed();
-      return 0;
-    }
-
     char *addi_imm = malloc(32);
-    if (!addi_imm) {
+    if (!lui_imm || !addi_imm) {
       free(lui_imm);
+      free(addi_imm);
       allocation_failed();
       return 0;
     }
@@ -258,6 +254,10 @@ unsigned transform_jr(Block *blk, char **args, int num_args) {
 unsigned transform_jal(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
+  if (num_args == 2) { // normal jal
+    if (add_to_block(blk, "jal", args, num_args) == 0)
+      return 1;
+  }
 
   if (num_args != 1)
     return 0;
@@ -279,6 +279,11 @@ unsigned transform_jalr(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
 
+  if (num_args == 3) { // normal jalr
+    if (add_to_block(blk, "jalr", args, num_args) == 0)
+      return 1;
+  }
+
   if (num_args != 1)
     return 0;
 
@@ -298,6 +303,11 @@ unsigned transform_lw(Block *blk, char **args, int num_args) {
   /* IMPLEMENT ME */
   /* === start === */
 
+  if (num_args == 3) { // normal lw
+    if (add_to_block(blk, "lw", args, num_args) == 0)
+      return 1;
+  }
+
   if (num_args != 2)
     return 0;
 
@@ -308,22 +318,19 @@ unsigned transform_lw(Block *blk, char **args, int num_args) {
   char *auipc = malloc(32);
   char *lw = malloc(32);
   if (!auipc || !lw) {
-    if (auipc)
-      free(auipc);
-    if (lw)
-      free(lw);
-
+    free(auipc);
+    free(lw);
     allocation_failed();
     return 0;
   }
 
   sprintf(auipc, "%s", label);
   sprintf(lw, "%s", label);
-
+  // TODO: check whether to add like this
   char *auipc_args[2] = {rd, auipc};
   if (add_to_block(blk, "auipc", auipc_args, 2) == 0) {
     char *lw_args[2] = {rd, lw};
-    if (add_to_block(blk, "lw", lw_args, 2) != 0)
+    if (add_to_block(blk, "lw", lw_args, 2) == 0)
       return 2;
   }
 
@@ -550,32 +557,32 @@ int write_ujtype(FILE *output, const InstrInfo *info, char **args,
   /* IMPLEMENT ME */
   /* === start === */
 
-  // UJ-type format: jal rd, label
-  if (num_args != 2)
-    return -1;
-
-  int rd = translate_reg(args[0]);
-  if (rd == -1)
-    return -1;
-
-  int64_t label_addr;
-  label_addr = get_addr_for_symbol(symtbl, args[1]);
-  if (label_addr == -1)
-    return -1;
-
-  int64_t offset = label_addr - addr;
-  // if (offset > ((1 << 20) - 1) || offset < -(1 << 20))
+  // // UJ-type format: jal rd, label
+  // if (num_args != 2)
   //   return -1;
 
-  uint32_t instruction = 0;
-  instruction |= (info->opcode & 0x7F);           // opcode (7 bits)
-  instruction |= ((rd & 0x1F) << 7);              // rd (5 bits)
-  instruction |= (((offset >> 20) & 0x1) << 31);  // imm[20]
-  instruction |= (((offset >> 1) & 0x3FF) << 21); // imm[10:1]
-  instruction |= (((offset >> 11) & 0x1) << 20);  // imm[11]
-  instruction |= (((offset >> 12) & 0xFF) << 12); // imm[19:12]
+  // int rd = translate_reg(args[0]);
+  // if (rd == -1)
+  //   return -1;
 
-  write_inst_hex(output, instruction);
+  // int64_t label_addr;
+  // label_addr = get_addr_for_symbol(symtbl, args[1]);
+  // if (label_addr == -1)
+  //   return -1;
+
+  // int64_t offset = label_addr - addr;
+  // // if (offset > ((1 << 20) - 1) || offset < -(1 << 20))
+  // //   return -1;
+
+  // uint32_t instruction = 0;
+  // instruction |= (info->opcode & 0x7F);           // opcode (7 bits)
+  // instruction |= ((rd & 0x1F) << 7);              // rd (5 bits)
+  // instruction |= (((offset >> 20) & 0x1) << 31);  // imm[20]
+  // instruction |= (((offset >> 1) & 0x3FF) << 21); // imm[10:1]
+  // instruction |= (((offset >> 11) & 0x1) << 20);  // imm[11]
+  // instruction |= (((offset >> 12) & 0xFF) << 12); // imm[19:12]
+
+  // write_inst_hex(output, instruction);
 
   /* === end === */
   return 0;
