@@ -650,37 +650,25 @@ int write_utype(FILE *output, const InstrInfo *info, char **args,
     return -1;
 
   int64_t value;
+  int result = translate_num(&value, args[1], IMM_20_UNSIGNED);
 
   // auipc x0, label
-  if (strcmp(info->name, "auipc") == 0) {
-    int64_t label_addr, offset = 0;
-    int result = translate_num(&offset, args[1], IMM_32_SIGNED); // offset
-
-    if (is_valid_imm(offset, IMM_20_UNSIGNED)) { // the normal auipc
-      value = offset;
-    } else {
-      label_addr = get_addr_for_symbol(symtbl, args[1]); // direct address
-
-      if (label_addr == -1 && result == -1)
-        return -1;
-
-      if (result == -1)
-        offset = label_addr - addr;
-
-      if (!is_valid_imm(offset, IMM_32_SIGNED))
-        return -1;
-
-      value = (offset >> 12) & 0xFFFFF;
-
-      // If lower 12 bits represent a negative number, adjust the upper part
-      if (offset & 0x800)
-        value += 1;
-    }
-
-  } else {
-    int result = translate_num(&value, args[1], IMM_20_UNSIGNED);
-    if (result == -1)
+  if (result == -1) {
+    if (strcmp(info->name, "auipc") != 0)
       return -1;
+
+    int64_t label_addr;
+    label_addr = get_addr_for_symbol(symtbl, args[1]); // direct address
+
+    if (label_addr == -1)
+      return -1;
+
+    value = label_addr - addr;
+    value = (value >> 12) & 0xFFFFF;
+
+    // If lower 12 bits represent a negative number, adjust the upper part
+    if (value & 0x800)
+      value += 1;
   }
 
   uint32_t instruction = 0;
